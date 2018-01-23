@@ -12,7 +12,7 @@ This project is intended to be a case study of a blockchain and smart contracts 
 This project contains number of **fundamental** computer science problems and alorithms to be implemented.
 
 It will give you understanding of the internals behind the blockchain and naturally, **as a contributor**, 
-necessary skills and knowledde of used alorithms and distributed systems.
+necessary skills and knowledge of used algorithms and distributed systems.
 
 And when the the next recruiter will ask you about exciting projects you participated just show your commits here.
 
@@ -23,8 +23,13 @@ And when the the next recruiter will ask you about exciting projects you partici
 * [Smart contracts article](https://blockgeeks.com/guides/smart-contracts/)
 
 
-## How to become a contibutor
+## How to become a contributor
 
 * Fork this project
 * Check the [issues section](https://github.com/prawn-cake/lecs/issues) OR **suggest your improvements** and create an issue
 * Send a PR
+
+
+## Requirements
+
+* python >= 3.5
