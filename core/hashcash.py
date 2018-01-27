@@ -6,23 +6,49 @@ https://en.wikipedia.org/wiki/Proof-of-work_system
 import random
 import hashlib
 import time
+import base64
+import uuid
+from datetime import datetime
 
 
-def get_hash(s):
-    return hashlib.sha1(str(s).encode()).hexdigest()
+def get_hash(val):
+    return hashlib.sha1(str(val).encode()).hexdigest()
 
 
-def verify_header(sha1):
-    return sha1.startswith(5 * '0')
+def b64(val):
+    return base64.b64encode(str(val).encode()).decode()
+
+
+def verify_header(val):
+    return get_hash(val).startswith(5 * '0')
+
+
+def x_hash_cash_header(resource):
+    """Calculate X-Hashcash header
+
+    Format:
+    ver:bits:date-YYMMDD[hhmm[ss]]:resource:ext(ignored):rand:counter
+
+    :param resource: resource identifier, e.g email
+    """
+
+    dt = datetime.utcnow().strftime('%Y%M%d%H%M%S')
+    rand = b64(uuid.uuid4())
+    cnt = random.randint(1, 2**20)
+
+    h = '1:20:{dt}:{resource}::{rand}:{counter}'.format(
+        dt=dt, resource=resource, rand=rand, counter=b64(cnt))
+
+    while not verify_header(h):
+        cnt += 1
+        h = '1:20:{dt}:{resource}::{rand}:{counter}'.format(
+            dt=dt, resource=resource, rand=rand, counter=b64(cnt))
+    return h
 
 
 if __name__ == '__main__':
     t0 = time.time()
-    r = random.randint(1, 2**160)
-    cur_hash = get_hash(r)
-    while not verify_header(cur_hash):
-        r += 1
-        cur_hash = get_hash(r)
+    header = x_hash_cash_header('test@gmail.com')
 
-    print(cur_hash)
+    print(header)
     print('Elapsed: {}s'.format(time.time() - t0))
