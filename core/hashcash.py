@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Proof-of-work system algorithm to achieve a distributed consensus in this
-case
+"""Proof-of-work system algorithm. Required to validate transactions
+
 https://en.wikipedia.org/wiki/Proof-of-work_system
+https://en.wikipedia.org/wiki/Hashcash
 """
 import random
 import hashlib
@@ -19,11 +20,11 @@ def b64(val):
     return base64.b64encode(str(val).encode()).decode()
 
 
-def verify_header(val):
+def verify_header(val: str) -> bool:
     return get_hash(val).startswith(5 * '0')
 
 
-def x_hash_cash_header(resource):
+def x_hash_cash_header(resource: str) -> str:
     """Calculate X-Hashcash header
 
     Format:
