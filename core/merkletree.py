@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 import math
+import codecs
 import functools
+
+
+def str_to_hex(s: str) -> bytes:
+    """Convert a string to its' hex representation
+
+    >>> str_to_hex('hello world')
+    >>> b'68656c6c6f20776f726c64'
+
+    """
+    return codecs.encode(s.encode(), 'hex')
 
 
 class MerkleTree(object):
@@ -11,7 +22,7 @@ class MerkleTree(object):
     >>> tree.add_element(2)
     >>> tree.add_element(7)
 
-    >>> trace = tree.verify(2)
+    >>> trace = tree.trace(2)
     """
 
     def __init__(self, struct: list):
@@ -120,7 +131,7 @@ class MerkleTree(object):
             return row, column - 1
         return row, column + 1
 
-    def verify(self, data_id):
+    def trace(self, data_id):
         """Verify that some data id is present in the block
 
         :param data_id: some data id
@@ -140,15 +151,44 @@ class MerkleTree(object):
 
         neighbor_coord = self.get_neighbor(row=self.depth - 1, column=data_idx)
         cur = self.val(*neighbor_coord)
+
         # Extract value (hash) from data layer tuple node
-        trace = [cur[1]]
+        # NOTE: We prefix a hash with '-' to indicate that the neighbor is from
+        # the right side to give verification function some order information
+        trace = [str(cur[1]) if neighbor_coord[1] > data_idx else '-' + str(cur[1])]
 
         while cur != self.root:
             parent_coord = self.get_parent_of(*neighbor_coord)
             neighbor_coord = self.get_neighbor(*parent_coord)
             cur = self.val(*neighbor_coord)
-            trace.append(cur)
+
+            # Root case
+            if parent_coord == (0, 0):
+                trace.append(cur)
+            else:
+                # NOTE: Same idea as above, we want to save order info
+                trace.append(cur if neighbor_coord > parent_coord else '-' + cur)
         return trace
+
+    @staticmethod
+    def verify(data_id, trace: list) -> bool:
+        """Verification function
+        NOTE: trace should contain order info (hashes starting with '-' will
+        invert the hashing order)
+        """
+        if not trace:
+            return False
+
+        root, chain = trace[-1], trace[:-1]
+
+        def reducer(acc, val):
+            if str(val).startswith('-'):
+                return str(val)[1:] + acc
+            return acc + str(val)
+
+        initial = str(data_id)
+        res = functools.reduce(reducer, chain, initial)
+        return res == root
 
     def traverse(self):
         for i, row in enumerate(self._tree):
@@ -185,10 +225,12 @@ if __name__ == '__main__':
     # The neighbor of the root is a root itself
     assert tv(*tree.get_neighbor(0, 0)) == tree.root == '01234567'
 
-    assert tree.verify(1) == [0, '23', '4567', '01234567']
-    assert tree.verify(7) == [6, '45', '0123', '01234567']
+    assert tree.trace(1) == ['-0', '23', '4567', '01234567']
+    assert tree.trace(7) == ['-6', '-45', '-0123', '01234567']
 
-    # TODO: test verification with functools.reduce
+    assert tree.verify(data_id=7, trace=tree.trace(7)) is True
+    assert tree.verify(data_id=8, trace=tree.trace(8)) is False
+    assert tree.verify(data_id=None, trace=tree.trace(8)) is False
 
     # Check # non-existing value
-    assert tree.verify(10) == []
+    assert tree.trace(10) == []
